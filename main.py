@@ -2,9 +2,15 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from collections import defaultdict
 from credentials import sp
+import time
 
 # --- Récupère ton user_id ---
 user_id = sp.current_user()["id"]
+
+# --- Test : récupérer ton profil ---
+me = sp.current_user()
+print("Connexion réussie ✅")
+print("Utilisateur :", me["display_name"], "| ID Spotify :", me["id"])
 
 # --- Récupère toutes tes chansons likées ---
 liked_tracks = []
@@ -19,10 +25,13 @@ print(f"Nombre de chansons likées récupérées : {len(liked_tracks)}")
 
 # --- Classement par genre ---
 genre_dict = defaultdict(list)
-
+artist_cache = {}
 for track in liked_tracks:
     artist_id = track["artists"][0]["id"]
-    artist_info = sp.artist(artist_id)
+    if artist_id not in artist_cache:
+        artist_cache[artist_id] = sp.artist(artist_id)
+    artist_info = artist_cache[artist_id]
+    time.sleep(0.1)  # Pour éviter de trop solliciter l'API
     genres = artist_info.get("genres", ["Unknown"])
     
     # Ajoute la chanson à tous les genres associés
