@@ -1,0 +1,29 @@
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+*.log
+
+# --- Environnements virtuels ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Configs locales ---
+ID_client.txt
+.cache
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
+
+# --- IDE Files ---
+.vscode/
+.idea/
+
+# --- Jupyter (si jamais tu en utilises) ---
+.ipynb_checkpoints/
