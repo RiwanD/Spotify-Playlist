@@ -1,21 +1,7 @@
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from collections import defaultdict
-
-# --- Configuration ---
-CLIENT_ID = "CLIENT_ID"
-CLIENT_SECRET = "CLIENT_SECRET"
-REDIRECT_URI = "http://localhost:8888/callback"
-
-SCOPE = "user-library-read playlist-modify-public playlist-modify-private"
-
-# --- Authentification ---
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    redirect_uri=REDIRECT_URI,
-    scope=SCOPE
-))
+from credentials import sp
 
 # --- Récupère ton user_id ---
 user_id = sp.current_user()["id"]
