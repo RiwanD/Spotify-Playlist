@@ -33,8 +33,3 @@ sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
     redirect_uri=REDIRECT_URI,
     scope="user-library-read playlist-modify-public playlist-modify-private"
 ))
-
-# --- Test : récupérer ton profil ---
-me = sp.current_user()
-print("Connexion réussie ✅")
-print("Utilisateur :", me["display_name"], "| ID Spotify :", me["id"])
