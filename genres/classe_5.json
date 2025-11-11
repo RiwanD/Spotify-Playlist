@@ -1,0 +1,49 @@
+{
+  "class_code": "5",
+  "class_label": "musiques fonctionnelles, divers",
+  "buckets": {
+    "5.21": "TV / Radio / Jingles",
+    "5.22": "Publicité",
+    "5.23": "Jeux vidéo",
+    "5.24": "Atmosphères / Illustration",
+    "5.41": "Lounge / Easy listening",
+    "5.42": "New Age / Meditation",
+    "5.43": "Relaxation / Sleep / Study",
+    "5.44": "Sport / Workout",
+    "5.66": "Karaoké"
+  },
+  "genres_by_bucket": {
+    "5.21": [
+      "hong kong tv drama",
+      "vintage radio show"
+    ],
+    "5.22": [],
+    "5.23": [
+      "idol game",
+      "anime game"
+    ],
+    "5.24": [
+      "atmosphere"
+    ],
+    "5.41": [
+      "lounge",
+      "easy listening",
+      "deep sunset lounge"
+    ],
+    "5.42": [
+      "meditation",
+      "new age",
+      "new age piano",
+      "guided meditation",
+      "world meditation"
+    ],
+    "5.43": [
+      "sleep",
+      "lo-fi study",
+      "lo-fi sleep",
+      "study beats"
+    ],
+    "5.44": [],
+    "5.66": []
+  }
+}

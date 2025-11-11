@@ -1,0 +1,28 @@
+{
+  "class_code": "8",
+  "class_label": "chanson francophone",
+  "buckets": {
+    "8.0": "Chanson / Variétés francophones"
+  },
+  "genres_by_bucket": {
+    "8.0": [
+      "chanson",
+      "drill francais",
+      "nouvelle chanson francaise",
+      "hyperpop francais",
+      "chanson paillarde",
+      "russian chanson",
+      "chanson virale",
+      "auteur-compositeur-interprete quebecois",
+      "chanson humoristique",
+      "plugg francais",
+      "vintage chanson",
+      "musique pour enfant quebecois",
+      "trad quebecois",
+      "noel quebecois",
+      "quebec hardcore",
+      "humour francais",
+      "folklore quebecois"
+    ]
+  }
+}

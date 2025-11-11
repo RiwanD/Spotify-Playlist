@@ -1,0 +1,33 @@
+{
+  "class_code": "7",
+  "class_label": "classe de décantation (inclassables / improvisées)",
+  "buckets": {
+    "7.0": "Improvisation / Inclassable"
+  },
+  "genres_by_bucket": {
+    "7.0": [
+      "british experimental",
+      "experimental synth",
+      "canadian experimental",
+      "australian experimental",
+      "ukrainian experimental",
+      "swedish experimental",
+      "mexican experimental",
+      "danish experimental",
+      "finnish experimental",
+      "indonesian experimental",
+      "swiss experimental",
+      "iranian experimental",
+      "dutch experimental",
+      "belgian experimental",
+      "african experimental",
+      "new england experimental",
+      "irish experimental",
+      "taiwan experimental",
+      "polish experimental",
+      "bulgarian experimental",
+      "czech experimental",
+      "peruvian experimental"
+    ]
+  }
+}

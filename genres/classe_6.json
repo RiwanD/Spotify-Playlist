@@ -1,0 +1,30 @@
+{
+  "class_code": "6",
+  "class_label": "musique et cinéma",
+  "buckets": {
+    "6.11": "Bandes originales de films (scores)",
+    "6.2": "Compilations / OST diverses"
+  },
+  "genres_by_bucket": {
+    "6.11": [
+      "soundtrack",
+      "japanese soundtrack",
+      "german soundtrack",
+      "british soundtrack",
+      "indie game soundtrack",
+      "classic soundtrack",
+      "french soundtrack",
+      "canadian soundtrack",
+      "vintage italian soundtrack",
+      "italian soundtrack",
+      "latin soundtrack",
+      "oceania soundtrack",
+      "thai ost",
+      "thai bl ost",
+      "deep soundtrack",
+      "korean soundtrack",
+      "korean bl ost"
+    ],
+    "6.2": []
+  }
+}
