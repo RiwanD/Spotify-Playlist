@@ -257,6 +257,10 @@
       "nz jazz",
       "honky-tonk piano",
       "swiss jazz",
+      "swing music",
+      "afro-cuban jazz",
+      "jazz ballads",
+      "jazz beats",
       "galician jazz",
       "hot jazz",
       "jazzcore",
@@ -334,6 +338,7 @@
       "motown",
       "funk rock",
       "funk paulista",
+      "brazilian funk",
       "bedroom r&b",
       "funk rj",
       "r&b en espanol",
@@ -447,6 +452,11 @@
       "norwegian space disco",
       "deep soul house",
       "south african r&b",
+      "french r&b",
+      "uk r&b",
+      "j-r&b",
+      "afro tech",
+      "afropiano",
       "language",
       "boogie",
       "deep funk house",
@@ -1095,7 +1105,14 @@
       "rap paraense",
       "rap burkinabe",
       "spoken word",
-      "chip hop"
+      "chip hop",
+      "3 step",
+      "alté",
+      "g-funk",
+      "west coast hip hop",
+      "uk grime",
+      "lo-fi hip hop",
+      "rap chrétien"
     ],
     "1.6": [
       "dancehall",
@@ -1180,7 +1197,8 @@
       "chinese reggae",
       "reggae boliviano",
       "dub product",
-      "punk ska"
+      "punk ska",
+      "ragga"
     ]
   }
 }

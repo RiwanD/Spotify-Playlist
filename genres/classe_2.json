@@ -427,7 +427,8 @@
       "modern downshift",
       "vintage swoon",
       "vintage rockabilly",
-      "rhythm and boogie"
+      "rhythm and boogie",
+      "rock and roll"
     ],
     "2.2": [
       "pop",
@@ -517,6 +518,7 @@
       "sophisti-pop",
       "socal pop punk",
       "candy pop",
+      "soft pop",
       "tamil pop",
       "girl group",
       "gym phonk",
@@ -2417,6 +2419,10 @@
       "michigan folk",
       "algerian folk",
       "cymraeg",
+      "classic country",
+      "country hip hop",
+      "southern gothic",
+      "sea shanties",
       "cornish folk",
       "malagasy folk",
       "greek folk",
@@ -3137,7 +3143,8 @@
       "deep symphonic black metal",
       "musica maringaense",
       "macedonian metal",
-      "metal piauiense"
+      "metal piauiense",
+      "heavy metal"
     ],
     "2.6": [
       "pop punk",
@@ -3399,7 +3406,10 @@
       "industrial noise",
       "hawaiian punk",
       "rock noise",
-      "indie emo rock"
+      "indie emo rock",
+      "indie",
+      "indie dance",
+      "proto-punk"
     ],
     "2.7": [
       "new wave",

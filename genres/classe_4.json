@@ -58,6 +58,7 @@
       "deep tropical house",
       "australian house",
       "g-house",
+      "electrocumbia",
       "turkish deep house",
       "future house",
       "german house",
@@ -122,7 +123,10 @@
       "japanese progressive house",
       "deep vocal house",
       "vapor house",
-      "deep deep tech house"
+      "deep deep tech house",
+      "french house",
+      "melodic house",
+      "rally house"
     ],
     "4.4": [
       "trance",
@@ -196,7 +200,9 @@
       "finnish techno",
       "glitter trance",
       "indian techno",
-      "cosmic uplifting trance"
+      "cosmic uplifting trance",
+      "hypertechno",
+      "psytrance"
     ],
     "4.6": [
       "edm",
@@ -502,7 +508,9 @@
       "german dnb",
       "minimal dnb",
       "french dnb",
-      "russian dnb"
+      "russian dnb",
+      "electroacoustic",
+      "melodic bass"
     ],
     "4.8": [
       "pop dance",
