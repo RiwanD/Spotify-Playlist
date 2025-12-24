@@ -26,12 +26,12 @@ def is_oct_2025(dt: datetime) -> bool:
     return OCT_START <= dt < NOV_START
 
 def get_all_user_playlists() -> List[Dict]:
-    print("🔎 Récupération des playlists…")
+    print("[*] Recuperation des playlists...")
     playlists = []
     results = sp.current_user_playlists(limit=50)
     while results:
         playlists.extend(results["items"])
-        print(f"  ➡️ {len(playlists)} playlists chargées…")
+        print(f"  -> {len(playlists)} playlists chargees...")
         results = sp.next(results) if results.get("next") else None
         time.sleep(0.1)  # anti rate-limit
     return playlists
@@ -57,55 +57,91 @@ def earliest_track_date(playlist_id: str) -> datetime | None:
         time.sleep(0.1)
     return earliest
 
-def main():
-    confirm = ("--confirm" in sys.argv)
+def delete_playlists(confirm=False, auto_mode=False):
+    """
+    Supprime des playlists selon les critères spécifiés.
+    
+    Args:
+        confirm: Si True, supprime réellement les playlists. Si False, mode dry-run.
+        auto_mode: Si True, cible les playlists contenant '(auto)'. Si False, cible les playlists d'octobre 2025.
+    """
     me = sp.current_user()
     user_id = me["id"]
-    print(f"👋 Connecté en tant que {me.get('display_name') or user_id} ({user_id})")
-    print("📅 Cible : playlists créées (≈ première date d’ajout) en **octobre 2025**")
+    print(f"[*] Connecte en tant que {me.get('display_name') or user_id} ({user_id})")
+    
+    if auto_mode:
+        print("[*] Cible : playlists contenant '(auto)' dans le nom")
+    else:
+        print("[*] Cible : playlists creees (premiere date d'ajout) en octobre 2025")
 
     playlists = get_all_user_playlists()
 
-    # Filtrer : playlists dont tu es propriétaire (évite d’unfollow des playlists suivies d’autrui)
+    # Filtrer : playlists dont tu es propriétaire (évite d'unfollow des playlists suivies d'autrui)
     owned = [p for p in playlists if p.get("owner", {}).get("id") == user_id]
-    print(f"🗂️ Playlists dont tu es propriétaire : {len(owned)}")
+    print(f"[*] Playlists dont tu es propriétaire : {len(owned)}")
 
     candidates = []
     for idx, p in enumerate(owned, start=1):
         pid = p["id"]
         name = p.get("name", "Sans nom")
         print(f"  [{idx}/{len(owned)}] Inspection: {name}")
-        first_dt = earliest_track_date(pid)
-        if first_dt is None:
-            # Playlist vide : impossible de dater → on ignore par sécurité
-            print("     ℹ️ Playlist vide ou non datable → ignorée")
-            continue
-        if is_oct_2025(first_dt):
-            candidates.append((pid, name, first_dt))
-            print(f"     ✅ CANDIDATE (premier ajout : {first_dt.isoformat()})")
+        
+        if auto_mode:
+            # Mode auto : chercher les playlists avec "(auto)" dans le nom
+            if "(auto)" in name.lower():
+                candidates.append((pid, name, None))
+                print(f"     [+] CANDIDATE (contient '(auto)')")
+            else:
+                print(f"     [-] Ne contient pas '(auto)'")
         else:
-            print(f"     ⏭️ Hors cible (premier ajout : {first_dt.isoformat()})")
+            # Mode octobre 2025 : chercher par date
+            first_dt = earliest_track_date(pid)
+            if first_dt is None:
+                # Playlist vide : impossible de dater → on ignore par sécurité
+                print("     [i] Playlist vide ou non datable -> ignoree")
+                continue
+            if is_oct_2025(first_dt):
+                candidates.append((pid, name, first_dt))
+                print(f"     [+] CANDIDATE (premier ajout : {first_dt.isoformat()})")
+            else:
+                print(f"     [-] Hors cible (premier ajout : {first_dt.isoformat()})")
 
     if not candidates:
-        print("\n✅ Aucune playlist à supprimer pour octobre 2025 selon ce critère.")
+        if auto_mode:
+            print("\n[+] Aucune playlist contenant '(auto)' trouvee.")
+        else:
+            print("\n[+] Aucune playlist a supprimer pour octobre 2025 selon ce critere.")
         return
 
-    print("\n🧾 PLAYLISTS CIBLÉES (suppression = unfollow) :")
+    print("\n[*] PLAYLISTS CIBLEES (suppression = unfollow) :")
     for pid, name, dt in candidates:
-        print(f"  • {name} — {dt:%Y-%m-%d %H:%M UTC} — id: {pid}")
+        if dt:
+            print(f"  • {name} — {dt:%Y-%m-%d %H:%M UTC} — id: {pid}")
+        else:
+            print(f"  • {name} — id: {pid}")
 
     if not confirm:
-        print("\n❓ Aucune suppression effectuée (dry-run).")
-        print("   ➜ Relance avec l’option :  python delete_oct2025_playlists.py --confirm")
+        print("\n[?] Aucune suppression effectuee (dry-run).")
+        if auto_mode:
+            print("   -> Relance avec l'option :  python main.py --delete --auto --confirm")
+        else:
+            print("   -> Relance avec l'option :  python main.py --delete --confirm")
         return
 
-    print("\n🗑️ Suppression (unfollow) en cours…")
+    print("\n[*] Suppression (unfollow) en cours...")
     for pid, name, dt in candidates:
         sp.current_user_unfollow_playlist(pid)
-        print(f"  ✅ Supprimée de ton compte : {name}")
+        print(f"  [+] Supprimee de ton compte : {name}")
         time.sleep(0.15)
 
-    print("\n🎉 Terminé.")
+    print("\n[+] Termine.")
+
+
+def main():
+    """Fonction main pour exécution directe du script."""
+    confirm = ("--confirm" in sys.argv)
+    auto_mode = ("--auto" in sys.argv)
+    delete_playlists(confirm=confirm, auto_mode=auto_mode)
 
 if __name__ == "__main__":
     main()
