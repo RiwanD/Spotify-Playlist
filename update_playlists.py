@@ -9,7 +9,6 @@ from pathlib import Path
 from collections import defaultdict
 from credentials import sp
 from music_genre import load_class_genres
-from main import get_liked_tracks, analyze_genres
 
 LAST_UPDATE_FILE = "last_update.json"
 
