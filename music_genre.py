@@ -398,6 +398,22 @@ def create_playlists_by_class(confirm=False, get_liked_tracks_func=None, analyze
                 print(f"  [{idx}/{len(all_playlists)}] [-] Erreur lors de la creation de {playlist_info['playlist_name']}: {e}")
         
         print(f"\n[+] Termine. {created_count}/{len(all_playlists)} playlist(s) creee(s) avec succes.")
+        
+        # Sauvegarder la date de dernière mise à jour
+        from datetime import datetime, timezone
+        import json
+        from pathlib import Path
+        try:
+            last_update_file = Path("last_update.json")
+            current_time = datetime.now(timezone.utc)
+            data = {
+                "last_update": current_time.isoformat()
+            }
+            with open(last_update_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            print(f"[*] Date de derniere mise a jour sauvegardee : {current_time.isoformat()}")
+        except Exception as e:
+            print(f"[!] Erreur lors de la sauvegarde de la date : {e}")
 
 
 if __name__ == "__main__":

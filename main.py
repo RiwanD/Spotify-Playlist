@@ -8,6 +8,7 @@ from find_auto_playlists import find_all_playlists
 from list_playlists import list_all_playlists
 from check_auto_created import check_auto_playlists
 from delete_playlist import delete_playlists
+from update_playlists import main as update_playlists_main
 
 
 def get_liked_tracks():
@@ -61,7 +62,8 @@ def show_help():
     print("  --list              : Lister toutes vos playlists")
     print("  --check             : Vérifier les playlists créées automatiquement")
     print("  --delete            : Supprimer des playlists (utilisez --auto pour cibler les '(auto)')")
-    print("  --confirm           : Confirmer les actions (création/suppression)")
+    print("  --update            : Mettre à jour les playlists avec les nouveaux titres likés")
+    print("  --confirm           : Confirmer les actions (création/suppression/mise à jour)")
     print("\nExemples :")
     print("  python main.py                    # Dry-run : créer les playlists par classe")
     print("  python main.py --confirm           # Créer réellement les playlists par classe")
@@ -71,6 +73,8 @@ def show_help():
     print("  python main.py --check             # Vérifier les playlists auto")
     print("  python main.py --delete --auto     # Dry-run : supprimer les playlists '(auto)'")
     print("  python main.py --delete --auto --confirm  # Supprimer réellement les playlists '(auto)'")
+    print("  python main.py --update            # Dry-run : mettre à jour avec les nouveaux titres")
+    print("  python main.py --update --confirm  # Mettre à jour réellement les playlists")
     print("=" * 80)
 
 
@@ -112,6 +116,11 @@ def main():
         print("\n[*] Mode : Suppression de playlists\n")
         auto_mode = ("--auto" in sys.argv)
         delete_playlists(confirm=confirm, auto_mode=auto_mode)
+        return
+    
+    if "--update" in sys.argv:
+        print("\n[*] Mode : Mise à jour des playlists\n")
+        update_playlists_main()
         return
     
     # Par défaut : créer les playlists par classe
