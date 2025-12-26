@@ -298,10 +298,13 @@ def update_playlists(playlists_to_update, confirm=False):
     print(f"\n[+] Termine. {updated_count}/{len(playlists_to_update)} playlist(s) mise(s) a jour avec succes.")
 
 
-def main():
-    """Fonction principale."""
-    confirm = ("--confirm" in sys.argv)
+def update_playlists_main(confirm=False):
+    """
+    Fonction principale pour mettre à jour les playlists.
     
+    Args:
+        confirm: Si True, met à jour réellement. Si False, mode dry-run.
+    """
     # Récupérer le profil utilisateur
     me = sp.current_user()
     print("[*] Connexion reussie")
@@ -344,6 +347,12 @@ def main():
     # Sauvegarder la date de mise à jour si confirmé
     if confirm:
         save_last_update_date()
+
+
+def main():
+    """Fonction principale pour exécution en ligne de commande."""
+    confirm = ("--confirm" in sys.argv)
+    update_playlists_main(confirm=confirm)
 
 
 if __name__ == "__main__":
