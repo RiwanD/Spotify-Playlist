@@ -26,28 +26,64 @@ def get_liked_tracks():
     return liked_tracks
 
 
-def analyze_genres(liked_tracks):
-    """Analyse les genres des artistes pour chaque chanson likée."""
+def analyze_genres(liked_tracks, use_cache=True, force_refresh=False):
+    """
+    Analyse les genres des artistes pour chaque chanson likée.
+    
+    Args:
+        liked_tracks: Liste des titres likés
+        use_cache: Si True, utilise le cache pour éviter les appels API répétés
+        force_refresh: Si True, force la mise à jour depuis l'API même si en cache
+    
+    Returns:
+        Tuple (genre_dict, track_genres_dict)
+    """
     print("\n[*] Analyse des genres des artistes...")
+    
+    if use_cache:
+        from genre_cache import get_cache
+        cache = get_cache()
+        
+        # Afficher les stats du cache
+        stats = cache.get_cache_stats()
+        print(f"[*] Cache: {stats['tracks_cached']} titres, {stats['artists_cached']} artistes en cache")
+        
+        # Récupérer les URIs des titres
+        track_uris = [track["uri"] for track in liked_tracks]
+        
+        # Analyser avec le cache
+        def progress_callback(idx, total):
+            print(f"  -> {idx}/{total} pistes analysees...")
+        
+        track_genres_dict = cache.analyze_tracks_genres(
+            track_uris, 
+            force_refresh=force_refresh,
+            progress_callback=progress_callback
+        )
+    else:
+        # Méthode originale sans cache
+        track_genres_dict = {}
+        artist_cache = {}
+        for idx, track in enumerate(liked_tracks, 1):
+            artist_id = track["artists"][0]["id"]
+            if artist_id not in artist_cache:
+                artist_cache[artist_id] = sp.artist(artist_id)
+            artist_info = artist_cache[artist_id]
+            time.sleep(0.1)  # Pour eviter de trop solliciter l'API
+            genres = artist_info.get("genres", ["Unknown"])
+            track_genres_dict[track["uri"]] = genres
+            
+            if idx % 50 == 0:
+                print(f"  -> {idx}/{len(liked_tracks)} pistes analysees...")
+    
+    # Construire le genre_dict à partir de track_genres_dict
     genre_dict = defaultdict(list)
-    artist_cache = {}
-    for idx, track in enumerate(liked_tracks, 1):
-        artist_id = track["artists"][0]["id"]
-        if artist_id not in artist_cache:
-            artist_cache[artist_id] = sp.artist(artist_id)
-        artist_info = artist_cache[artist_id]
-        time.sleep(0.1)  # Pour eviter de trop solliciter l'API
-        genres = artist_info.get("genres", ["Unknown"])
-        
-        # Ajoute la chanson à tous les genres associés
+    for track_uri, genres in track_genres_dict.items():
         for genre in genres:
-            genre_dict[genre].append(track["uri"])
-        
-        if idx % 50 == 0:
-            print(f"  -> {idx}/{len(liked_tracks)} pistes analysees...")
+            genre_dict[genre].append(track_uri)
     
     print(f"[*] {len(genre_dict)} genres differents trouves dans les chansons likees\n")
-    return genre_dict
+    return genre_dict, track_genres_dict
 
 
 def show_help():
@@ -64,6 +100,11 @@ def show_help():
     print("  --delete            : Supprimer des playlists (utilisez --auto pour cibler les '(auto)')")
     print("  --update            : Mettre à jour les playlists avec les nouveaux titres likés")
     print("  --confirm           : Confirmer les actions (création/suppression)")
+    print("  --scoring           : Utiliser le système de scoring pondéré (nécessite entraînement)")
+    print("  --no-cache          : Désactiver l'utilisation du cache des genres")
+    print("  --refresh-cache     : Forcer la mise à jour du cache depuis l'API")
+    print("  --cache-stats       : Afficher les statistiques du cache")
+    print("  --clear-cache       : Vider le cache des genres")
     print("\nExemples :")
     print("  python main.py                    # Dry-run : créer les playlists par classe")
     print("  python main.py --confirm           # Créer réellement les playlists par classe")
@@ -120,12 +161,57 @@ def main():
     
     if "--update" in sys.argv:
         print("\n[*] Mode : Mise à jour des playlists\n")
-        update_playlists_main(confirm=confirm)
+        use_cache = ("--no-cache" not in sys.argv)
+        force_refresh = ("--refresh-cache" in sys.argv)
+        update_playlists_main(confirm=confirm, use_cache=use_cache, force_refresh=force_refresh)
+        return
+    
+    if "--cache-stats" in sys.argv:
+        print("\n[*] Statistiques du cache\n")
+        from genre_cache import get_cache
+        cache = get_cache()
+        stats = cache.get_cache_stats()
+        print(f"Fichier de cache: {stats['cache_file']}")
+        print(f"Titres en cache: {stats['tracks_cached']}")
+        print(f"Artistes en cache: {stats['artists_cached']}")
+        if stats['created_at']:
+            from datetime import datetime
+            created = datetime.fromtimestamp(stats['created_at'])
+            updated = datetime.fromtimestamp(stats['last_updated'])
+            print(f"Créé le: {created.strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"Dernière mise à jour: {updated.strftime('%Y-%m-%d %H:%M:%S')}")
+        return
+    
+    if "--clear-cache" in sys.argv:
+        print("\n[*] Vidage du cache\n")
+        from genre_cache import get_cache
+        cache = get_cache()
+        cache.clear_cache(confirm=True)
         return
     
     # Par défaut : créer les playlists par classe
     print("\n[*] Mode : Création de playlists par classe (nomenclature française)\n")
-    create_playlists_by_class(confirm=confirm, get_liked_tracks_func=get_liked_tracks, analyze_genres_func=analyze_genres)
+    use_scoring = ("--scoring" in sys.argv)
+    use_cache = ("--no-cache" not in sys.argv)
+    force_refresh = ("--refresh-cache" in sys.argv)
+    
+    if use_scoring:
+        print("[*] Mode scoring pondere active\n")
+    if not use_cache:
+        print("[*] Cache des genres desactive\n")
+    if force_refresh:
+        print("[*] Mise a jour forcee du cache depuis l'API\n")
+    
+    # Créer une fonction wrapper pour analyze_genres avec les paramètres de cache
+    def analyze_genres_with_cache(liked_tracks):
+        return analyze_genres(liked_tracks, use_cache=use_cache, force_refresh=force_refresh)
+    
+    create_playlists_by_class(
+        confirm=confirm, 
+        get_liked_tracks_func=get_liked_tracks, 
+        analyze_genres_func=analyze_genres_with_cache,
+        use_scoring=use_scoring
+    )
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from collections import defaultdict
 from credentials import sp
-from music_genre import load_class_genres
+from music_genre import load_class_genres, get_incompatible_genres, filter_incompatible_tracks
 
 LAST_UPDATE_FILE = "last_update.json"
 
@@ -105,54 +105,90 @@ def get_new_liked_tracks(last_update_date=None):
     return new_tracks
 
 
-def analyze_new_tracks_genres(new_tracks):
+def analyze_new_tracks_genres(new_tracks, use_cache=True, force_refresh=False):
     """
-    Analyse les genres des nouvelles chansons.
+    Analyse les genres des nouvelles chansons en utilisant le cache.
     
     Args:
         new_tracks: Liste des nouvelles chansons
+        use_cache: Si True, utilise le cache
+        force_refresh: Si True, force la mise à jour depuis l'API
     
     Returns:
-        Dictionnaire {genre: [track_uris]}
+        Tuple (genre_dict, track_genres_dict) où:
+        - genre_dict: Dictionnaire {genre: [track_uris]}
+        - track_genres_dict: Dictionnaire {track_uri: [genres]}
     """
     print("\n[*] Analyse des genres des nouvelles chansons...")
-    genre_dict = defaultdict(list)
-    artist_cache = {}
     
-    for idx, track_info in enumerate(new_tracks, 1):
-        track = track_info["track"]
-        artist_id = track["artists"][0]["id"]
+    if use_cache:
+        from genre_cache import get_cache
+        cache = get_cache()
         
-        if artist_id not in artist_cache:
-            artist_cache[artist_id] = sp.artist(artist_id)
+        # Afficher les stats du cache
+        stats = cache.get_cache_stats()
+        print(f"[*] Cache: {stats['tracks_cached']} titres, {stats['artists_cached']} artistes en cache")
         
-        artist_info = artist_cache[artist_id]
-        time.sleep(0.1)  # Pour éviter de trop solliciter l'API
-        genres = artist_info.get("genres", ["Unknown"])
+        # Récupérer les URIs des nouvelles chansons
+        track_uris = [track_info["uri"] for track_info in new_tracks]
         
-        # Ajouter la chanson à tous les genres associés
+        # Analyser avec le cache
+        def progress_callback(idx, total):
+            print(f"  -> {idx}/{total} nouvelles pistes analysees...")
+        
+        track_genres_dict = cache.analyze_tracks_genres(
+            track_uris,
+            force_refresh=force_refresh,
+            progress_callback=progress_callback
+        )
+    else:
+        # Méthode originale sans cache
+        track_genres_dict = {}
+        artist_cache = {}
+        
+        for idx, track_info in enumerate(new_tracks, 1):
+            track = track_info["track"]
+            artist_id = track["artists"][0]["id"]
+            
+            if artist_id not in artist_cache:
+                artist_cache[artist_id] = sp.artist(artist_id)
+            
+            artist_info = artist_cache[artist_id]
+            time.sleep(0.1)  # Pour éviter de trop solliciter l'API
+            genres = artist_info.get("genres", ["Unknown"])
+            
+            # Stocker tous les genres de cette piste pour le filtrage
+            track_genres_dict[track_info["uri"]] = genres
+            
+            if idx % 20 == 0:
+                print(f"  -> {idx}/{len(new_tracks)} nouvelles pistes analysees...")
+    
+    # Construire le genre_dict
+    genre_dict = defaultdict(list)
+    for track_uri, genres in track_genres_dict.items():
         for genre in genres:
-            genre_dict[genre].append(track_info["uri"])
-        
-        if idx % 20 == 0:
-            print(f"  -> {idx}/{len(new_tracks)} nouvelles pistes analysees...")
+            genre_dict[genre].append(track_uri)
     
     print(f"[*] {len(genre_dict)} genres differents trouves dans les nouvelles chansons\n")
-    return genre_dict
+    return genre_dict, track_genres_dict
 
 
-def find_playlists_for_genres(class_genres, genre_dict):
+def find_playlists_for_genres(class_genres, genre_dict, track_genres_dict):
     """
     Trouve les playlists correspondant aux genres trouvés.
     
     Args:
         class_genres: Dictionnaire des classes de genres
         genre_dict: Dictionnaire des genres des nouvelles chansons
+        track_genres_dict: Dictionnaire {track_uri: [genres]} pour le filtrage
     
     Returns:
         Dictionnaire {playlist_name: [track_uris]}
     """
     print("[*] Recherche des playlists correspondantes...")
+    
+    # Charger les genres incompatibles
+    incompatible_genres = get_incompatible_genres()
     
     # Collecter tous les genres connus
     all_known_genres = set()
@@ -192,9 +228,17 @@ def find_playlists_for_genres(class_genres, genre_dict):
                 if genre in genre_dict:
                     matching_track_uris.update(genre_dict[genre])
             
-            if matching_track_uris:
+            # Filtrer les titres incompatibles
+            incompatible_genres_set = incompatible_genres.get(bucket_key, set())
+            filtered_track_uris = filter_incompatible_tracks(
+                list(matching_track_uris),
+                track_genres_dict,
+                incompatible_genres_set
+            )
+            
+            if filtered_track_uris:
                 playlist_name = f"[{class_code}] {bucket_label} (auto)"
-                playlists_to_update[playlist_name].update(matching_track_uris)
+                playlists_to_update[playlist_name].update(filtered_track_uris)
     
     # Convertir les sets en listes
     playlists_to_update_dict = {
@@ -298,12 +342,14 @@ def update_playlists(playlists_to_update, confirm=False):
     print(f"\n[+] Termine. {updated_count}/{len(playlists_to_update)} playlist(s) mise(s) a jour avec succes.")
 
 
-def update_playlists_main(confirm=False):
+def update_playlists_main(confirm=False, use_cache=True, force_refresh=False):
     """
     Fonction principale pour mettre à jour les playlists.
     
     Args:
         confirm: Si True, met à jour réellement. Si False, mode dry-run.
+        use_cache: Si True, utilise le cache des genres
+        force_refresh: Si True, force la mise à jour du cache depuis l'API
     """
     # Récupérer le profil utilisateur
     me = sp.current_user()
@@ -333,13 +379,13 @@ def update_playlists_main(confirm=False):
         return
     
     # Analyser les genres des nouvelles chansons
-    genre_dict = analyze_new_tracks_genres(new_tracks)
+    genre_dict, track_genres_dict = analyze_new_tracks_genres(new_tracks, use_cache=use_cache, force_refresh=force_refresh)
     
     # Charger les classes de genres
     class_genres = load_class_genres()
     
     # Trouver les playlists à mettre à jour
-    playlists_to_update = find_playlists_for_genres(class_genres, genre_dict)
+    playlists_to_update = find_playlists_for_genres(class_genres, genre_dict, track_genres_dict)
     
     # Mettre à jour les playlists
     update_playlists(playlists_to_update, confirm=confirm)

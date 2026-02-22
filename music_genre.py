@@ -1,5 +1,3 @@
-import spotipy
-from spotipy.oauth2 import SpotifyOAuth
 from collections import defaultdict
 from credentials import sp
 import json
@@ -226,13 +224,125 @@ def handle_unknown_genres(genre_dict, class_genres):
     print("\n[*] Traitement des genres inconnus termine.")
 
 
-def create_playlists_by_class(confirm=False, get_liked_tracks_func=None, analyze_genres_func=None):
-    """Crée des playlists par classe selon la nomenclature française."""
+def get_incompatible_genres():
+    """
+    Définit les genres incompatibles pour chaque bucket/classe.
+    Un titre avec un genre incompatible sera exclu de la playlist correspondante.
+    """
+    return {
+        # Classe 4 - Musiques électroniques
+        "4.3": {  # House
+            "rap", "hip hop", "french rap", "rap francais", "trap", "drill", 
+            "gangster rap", "conscious hip hop", "underground hip hop",
+            "alternative hip hop", "cloud rap", "emo rap", "hardcore hip hop",
+            "country rap", "rap rock", "rap metal", "jazz rap", "hip house"
+        },
+        "4.4": {  # Techno / Trance / Hardcore
+            "rap", "hip hop", "french rap", "rap francais", "trap", "drill",
+            "gangster rap", "conscious hip hop", "underground hip hop",
+            "alternative hip hop", "cloud rap", "emo rap", "hardcore hip hop",
+            "country rap", "rap rock", "rap metal"
+        },
+        "4.6": {  # Electronica / Glitch / IDM
+            "rap", "hip hop", "french rap", "rap francais", "trap", "drill",
+            "gangster rap", "conscious hip hop", "underground hip hop",
+            "alternative hip hop", "cloud rap", "emo rap", "hardcore hip hop",
+            "country rap", "rap rock", "rap metal"
+        },
+        "4.7": {  # Jungle / Drum & Bass
+            "rap", "hip hop", "french rap", "rap francais", "trap", "drill",
+            "gangster rap", "conscious hip hop", "underground hip hop",
+            "alternative hip hop", "cloud rap", "emo rap", "hardcore hip hop",
+            "country rap", "rap rock", "rap metal"
+        },
+        "4.8": {  # Eurodance / Dance
+            "rap", "hip hop", "french rap", "rap francais", "trap", "drill",
+            "gangster rap", "conscious hip hop", "underground hip hop",
+            "alternative hip hop", "cloud rap", "emo rap", "hardcore hip hop",
+            "country rap", "rap rock", "rap metal"
+        },
+        # Classe 1 - Musiques d'influence afro-américaine
+        "1.5": {  # Hip hop, Rap
+            "house", "deep house", "tech house", "progressive house", "techno",
+            "trance", "drum and bass", "jungle", "dubstep", "edm", "hardstyle"
+        },
+        # Ajouter d'autres incompatibilités si nécessaire
+    }
+
+
+def filter_incompatible_tracks(track_uris, track_genres_dict, incompatible_genres_set):
+    """
+    Filtre les titres qui ont des genres incompatibles.
+    
+    Args:
+        track_uris: Liste des URIs de pistes à filtrer
+        track_genres_dict: Dictionnaire {track_uri: [genres]}
+        incompatible_genres_set: Set de genres incompatibles
+    
+    Returns:
+        Liste filtrée des URIs de pistes
+    """
+    if not incompatible_genres_set:
+        return track_uris
+    
+    filtered_tracks = []
+    for track_uri in track_uris:
+        track_genres = track_genres_dict.get(track_uri, [])
+        # Convertir en minuscules pour la comparaison
+        track_genres_lower = [g.lower() for g in track_genres]
+        incompatible_lower = {g.lower() for g in incompatible_genres_set}
+        
+        # Vérifier si le titre a des genres incompatibles
+        has_incompatible = any(genre in incompatible_lower for genre in track_genres_lower)
+        
+        if not has_incompatible:
+            filtered_tracks.append(track_uri)
+    
+    return filtered_tracks
+
+
+def create_playlists_by_class(confirm=False, get_liked_tracks_func=None, analyze_genres_func=None, use_scoring=False):
+    """
+    Crée des playlists par classe selon la nomenclature française.
+    
+    Args:
+        confirm: Si True, crée réellement les playlists
+        get_liked_tracks_func: Fonction pour récupérer les titres likés
+        analyze_genres_func: Fonction pour analyser les genres
+        use_scoring: Si True, utilise le système de scoring pondéré au lieu du filtrage simple
+    """
     # Récupère ton user_id
     user_id = sp.current_user()["id"]
     
     # Charger les genres par classe
     class_genres = load_class_genres()
+    
+    # Charger le modèle de scoring si demandé
+    scoring_model = None
+    if use_scoring:
+        try:
+            from genre_scoring import GenreScoringModel
+            scoring_model = GenreScoringModel(class_genres)
+            # Charger les poids pour tous les buckets disponibles
+            from pathlib import Path
+            for class_label, class_info in class_genres.items():
+                class_code = class_info["code"]
+                buckets = class_info.get("buckets", {})
+                for bucket_key in buckets.keys():
+                    weights_file = f"weights_{class_code}_{bucket_key.replace('.', '_')}.json"
+                    if Path(weights_file).exists():
+                        try:
+                            scoring_model.load_weights(weights_file)
+                        except:
+                            pass
+            print("[*] Modele de scoring charge (poids entraines charges si disponibles)")
+        except Exception as e:
+            print(f"[!] Erreur lors du chargement du modele de scoring: {e}")
+            print("[!] Retour au mode filtrage simple")
+            use_scoring = False
+    
+    # Charger les genres incompatibles (utilisé si use_scoring=False)
+    incompatible_genres = get_incompatible_genres()
     
     # Utiliser les fonctions passées en paramètres ou les importer depuis main
     if get_liked_tracks_func is None or analyze_genres_func is None:
@@ -245,7 +355,7 @@ def create_playlists_by_class(confirm=False, get_liked_tracks_func=None, analyze
     liked_tracks = get_liked_tracks_func()
     
     # Analyse des genres
-    genre_dict = analyze_genres_func(liked_tracks)
+    genre_dict, track_genres_dict = analyze_genres_func(liked_tracks)
     
     # Détecter et gérer les genres inconnus (peut modifier class_genres)
     handle_unknown_genres(genre_dict, class_genres)
@@ -314,7 +424,31 @@ def create_playlists_by_class(confirm=False, get_liked_tracks_func=None, analyze
                 if genre in genre_dict:
                     track_uris.update(genre_dict[genre])
             
-            track_uris_list = list(track_uris)
+            if use_scoring and scoring_model:
+                # Utiliser le système de scoring pondéré
+                # Les poids sont déjà chargés au début
+                scored_tracks = scoring_model.score_tracks_for_bucket(
+                    track_genres_dict, bucket_key, threshold=0.5
+                )
+                track_uris_list = [uri for uri, score in scored_tracks]
+                
+                if scored_tracks:
+                    avg_score = sum(score for _, score in scored_tracks) / len(scored_tracks)
+                    max_score = max(score for _, score in scored_tracks)
+                    print(f"     Score moyen: {avg_score:.3f}, Score max: {max_score:.3f}")
+            else:
+                # Filtrer les titres incompatibles (méthode simple)
+                incompatible_genres_set = incompatible_genres.get(bucket_key, set())
+                track_uris_list = filter_incompatible_tracks(
+                    list(track_uris), 
+                    track_genres_dict, 
+                    incompatible_genres_set
+                )
+                
+                # Afficher le nombre de titres filtrés si des incompatibilités sont définies
+                if incompatible_genres_set and len(track_uris_list) < len(track_uris):
+                    filtered_count = len(track_uris) - len(track_uris_list)
+                    print(f"     ({filtered_count} titre(s) exclu(s) pour incompatibilite de genres)")
             
             # Ne créer que les playlists avec au moins 3 titres
             if len(track_uris_list) < 3:
