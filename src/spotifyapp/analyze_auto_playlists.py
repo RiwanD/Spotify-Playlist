@@ -1,4 +1,4 @@
-from credentials import sp
+from .credentials import sp
 from datetime import datetime, timezone
 
 def analyze_auto_playlists():
@@ -92,4 +92,3 @@ def analyze_auto_playlists():
 
 if __name__ == "__main__":
     analyze_auto_playlists()
-

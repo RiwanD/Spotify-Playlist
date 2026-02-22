@@ -1,4 +1,4 @@
-from credentials import sp
+from .credentials import sp
 
 def list_all_playlists():
     print("[*] Recuperation de toutes vos playlists...\n")
@@ -31,4 +31,3 @@ def list_all_playlists():
 
 if __name__ == "__main__":
     list_all_playlists()
-

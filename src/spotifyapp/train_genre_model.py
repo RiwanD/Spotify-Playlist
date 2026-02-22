@@ -11,13 +11,14 @@ import argparse
 import json
 from collections import defaultdict
 from pathlib import Path
-from credentials import sp
-from music_genre import load_class_genres
-from genre_scoring import (
+from .credentials import sp
+from .music_genre import load_class_genres
+from .genre_scoring import (
     GenreScoringModel, 
     create_training_data_from_playlists,
     evaluate_model
 )
+from .paths import path_weights
 
 
 def get_playlist_tracks(playlist_name: str) -> set:
@@ -91,7 +92,7 @@ def analyze_tracks_genres(track_uris: set, use_cache=True, force_refresh=False) 
     print("\n[*] Analyse des genres des titres...")
     
     if use_cache:
-        from genre_cache import get_cache
+        from .genre_cache import get_cache
         cache = get_cache()
         
         # Afficher les stats du cache
@@ -152,9 +153,9 @@ def train_bucket_model(
     model = GenreScoringModel(class_genres)
     
     # Charger les poids existants si disponibles
-    weights_file = f"weights_{class_code}_{bucket_key.replace('.', '_')}.json"
+    weights_file = path_weights(class_code, bucket_key)
     try:
-        model.load_weights(weights_file)
+        model.load_weights(str(weights_file))
         print(f"[*] Poids existants charges depuis {weights_file}")
     except:
         print(f"[*] Initialisation avec poids par defaut")
@@ -262,7 +263,7 @@ def train_bucket_model(
         print(f"    {idx:2d}. {genre}: {weight:.3f}")
     
     # Sauvegarder les poids
-    model.save_weights(weights_file)
+    model.save_weights(str(weights_file))
     print(f"\n[+] Poids sauvegardes dans {weights_file}")
     
     return model

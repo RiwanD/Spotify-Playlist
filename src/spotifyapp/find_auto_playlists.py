@@ -1,4 +1,4 @@
-from credentials import sp
+from .credentials import sp
 import re
 
 def find_all_playlists():
@@ -67,4 +67,3 @@ def find_all_playlists():
 
 if __name__ == "__main__":
     find_all_playlists()
-

@@ -1,17 +1,19 @@
 from collections import defaultdict
-from credentials import sp
+from .credentials import sp
 import json
 import os
 import time
 import sys
 from pathlib import Path
 
+from .paths import DIR_GENRES, path_weights, path_last_update
+
 # Les fonctions get_liked_tracks() et analyze_genres() sont définies dans main.py
 # Elles peuvent être passées en paramètres pour éviter les imports circulaires
 
 def load_class_genres():
     """Charge les fichiers de genres et collecte tous les genres par classe."""
-    genres_dir = Path("genres")
+    genres_dir = DIR_GENRES
     class_data = []
     
     print("\n[*] Chargement des fichiers de genres...")
@@ -321,18 +323,17 @@ def create_playlists_by_class(confirm=False, get_liked_tracks_func=None, analyze
     scoring_model = None
     if use_scoring:
         try:
-            from genre_scoring import GenreScoringModel
+            from .genre_scoring import GenreScoringModel
             scoring_model = GenreScoringModel(class_genres)
             # Charger les poids pour tous les buckets disponibles
-            from pathlib import Path
             for class_label, class_info in class_genres.items():
                 class_code = class_info["code"]
                 buckets = class_info.get("buckets", {})
                 for bucket_key in buckets.keys():
-                    weights_file = f"weights_{class_code}_{bucket_key.replace('.', '_')}.json"
-                    if Path(weights_file).exists():
+                    weights_file = path_weights(class_code, bucket_key)
+                    if weights_file.exists():
                         try:
-                            scoring_model.load_weights(weights_file)
+                            scoring_model.load_weights(str(weights_file))
                         except:
                             pass
             print("[*] Modele de scoring charge (poids entraines charges si disponibles)")
@@ -536,9 +537,9 @@ def create_playlists_by_class(confirm=False, get_liked_tracks_func=None, analyze
         # Sauvegarder la date de dernière mise à jour
         from datetime import datetime, timezone
         import json
-        from pathlib import Path
         try:
-            last_update_file = Path("last_update.json")
+            last_update_file = path_last_update()
+            last_update_file.parent.mkdir(parents=True, exist_ok=True)
             current_time = datetime.now(timezone.utc)
             data = {
                 "last_update": current_time.isoformat()

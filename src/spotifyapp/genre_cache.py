@@ -8,23 +8,25 @@ import json
 import time
 from pathlib import Path
 from typing import Dict, List, Optional
-from credentials import sp
+from .credentials import sp
+from .paths import path_genre_cache
 
 
-CACHE_FILE = "genre_cache.json"
 CACHE_VERSION = 1  # Version du format de cache (pour migrations futures)
 
 
 class GenreCache:
     """Gère le cache des genres musicaux."""
     
-    def __init__(self, cache_file: str = CACHE_FILE):
+    def __init__(self, cache_file=None):
         """
         Initialise le cache.
         
         Args:
-            cache_file: Chemin du fichier de cache
+            cache_file: Chemin du fichier de cache (défaut: depuis paths)
         """
+        if cache_file is None:
+            cache_file = path_genre_cache()
         self.cache_file = Path(cache_file)
         self.cache_data = self._load_cache()
     
@@ -60,6 +62,7 @@ class GenreCache:
         """Sauvegarde le cache dans le fichier."""
         try:
             self.cache_data["last_updated"] = time.time()
+            Path(self.cache_file).parent.mkdir(parents=True, exist_ok=True)
             with open(self.cache_file, 'w', encoding='utf-8') as f:
                 json.dump(self.cache_data, f, ensure_ascii=False, indent=2)
         except Exception as e:

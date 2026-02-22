@@ -13,7 +13,7 @@ Cette application permet de :
 
 ### Création de ID_client.txt
 
-Vous devez créer un fichier `ID_client.txt` dans le même dossier que `credentials.py`.
+Vous devez créer un fichier `ID_client.txt` dans le dossier `config/` (à la racine du projet).
 
 Structure du fichier :
 ```
@@ -25,21 +25,23 @@ REDIRECT_URI = "http://127.0.0.1:8888/callback"
 ### Installation des dépendances
 
 ```bash
-pip install spotipy
+pip install -r requirements.txt
 ```
 
 ## Structure du projet
 
-- `main.py` : Script principal qui route vers les différentes fonctionnalités
-- `music_genre.py` : Gestion de la création de playlists par classe selon la nomenclature française
-- `credentials.py` : Gestion de l'authentification Spotify
-- `genres/` : Dossier contenant les fichiers JSON de classification des genres (nomenclature française)
-  - `classe_0.json` à `classe_9.json` : Fichiers de classification par classe
-- `analyze_auto_playlists.py` : Analyse des playlists contenant '(auto)'
-- `find_auto_playlists.py` : Recherche de playlists suspectes
-- `list_playlists.py` : Liste toutes vos playlists
-- `check_auto_created.py` : Vérifie les playlists créées automatiquement
-- `delete_playlist.py` : Suppression de playlists
+- `main.py` : Point d'entrée principal (à la racine)
+- `src/spotifyapp/` : Package Python
+  - `credentials.py` : Authentification Spotify
+  - `paths.py` : Chemins centralisés (data/, config/)
+  - `music_genre.py` : Création de playlists par classe (nomenclature française)
+  - `genre_scoring.py`, `train_genre_model.py` : Scoring pondéré
+  - `genre_cache.py` : Cache des genres
+  - `update_playlists.py`, `find_auto_playlists.py`, `analyze_auto_playlists.py`, `list_playlists.py`, `check_auto_created.py`, `delete_playlist.py` : Autres fonctionnalités
+- `config/` : Fichiers de configuration (ex. `ID_client.txt`)
+- `data/` : Données (genres, poids, cache, dernière mise à jour)
+  - `data/genres/` : Fichiers JSON de classification (classe_0.json à classe_9.json, etc.)
+- `docs/` : Documentation additionnelle (README_SCORING.md, GENRES_AJOUTES.md)
 
 ## Fonctionnalités
 

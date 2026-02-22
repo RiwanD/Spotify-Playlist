@@ -1,4 +1,4 @@
-from credentials import sp
+from .credentials import sp
 
 def check_auto_playlists():
     print("[*] Recherche des playlists creees par main.py (avec '(auto)')...\n")
@@ -59,4 +59,3 @@ def check_auto_playlists():
 
 if __name__ == "__main__":
     check_auto_playlists()
-

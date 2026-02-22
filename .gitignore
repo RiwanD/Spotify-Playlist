@@ -15,8 +15,12 @@ ENV/
 
 # --- Configs locales ---
 ID_client.txt
+config/ID_client.txt
 TokenCursor.txt
 .cache
+
+# --- Données générées / cache ---
+data/genre_cache.json
 
 # --- OS Files ---
 .DS_Store

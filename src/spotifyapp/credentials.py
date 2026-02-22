@@ -1,8 +1,13 @@
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
+from .paths import path_id_client
+
+
 # --- Fonction pour lire le fichier de config ---
-def read_config(filename="ID_client.txt"):
+def read_config(filename=None):
+    if filename is None:
+        filename = path_id_client()
     config = {}
     with open(filename, "r", encoding="utf-8") as f:
         for line in f:
@@ -16,7 +21,7 @@ def read_config(filename="ID_client.txt"):
     return config
 
 # --- Charger les infos du fichier ---
-config = read_config("ID_client.txt")
+config = read_config()
 
 CLIENT_ID = config.get("CLIENT_ID")
 CLIENT_SECRET = config.get("CLIENT_SECRET")

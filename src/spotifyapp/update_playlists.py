@@ -7,17 +7,17 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from collections import defaultdict
-from credentials import sp
-from music_genre import load_class_genres, get_incompatible_genres, filter_incompatible_tracks
-
-LAST_UPDATE_FILE = "last_update.json"
+from .credentials import sp
+from .music_genre import load_class_genres, get_incompatible_genres, filter_incompatible_tracks
+from .paths import path_last_update
 
 
 def load_last_update_date():
     """Charge la date de la dernière mise à jour depuis le fichier."""
-    if Path(LAST_UPDATE_FILE).exists():
+    last_update_file = path_last_update()
+    if last_update_file.exists():
         try:
-            with open(LAST_UPDATE_FILE, "r", encoding="utf-8") as f:
+            with open(last_update_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 last_update_str = data.get("last_update")
                 if last_update_str:
@@ -32,11 +32,13 @@ def load_last_update_date():
 def save_last_update_date():
     """Sauvegarde la date actuelle comme dernière date de mise à jour."""
     try:
+        last_update_file = path_last_update()
+        last_update_file.parent.mkdir(parents=True, exist_ok=True)
         current_time = datetime.now(timezone.utc)
         data = {
             "last_update": current_time.isoformat()
         }
-        with open(LAST_UPDATE_FILE, "w", encoding="utf-8") as f:
+        with open(last_update_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
         print(f"[*] Date de dernière mise à jour sauvegardee : {current_time.isoformat()}")
     except Exception as e:
@@ -122,7 +124,7 @@ def analyze_new_tracks_genres(new_tracks, use_cache=True, force_refresh=False):
     print("\n[*] Analyse des genres des nouvelles chansons...")
     
     if use_cache:
-        from genre_cache import get_cache
+        from .genre_cache import get_cache
         cache = get_cache()
         
         # Afficher les stats du cache

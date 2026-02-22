@@ -1,14 +1,23 @@
 import sys
 import time
+from pathlib import Path
 from collections import defaultdict
-from credentials import sp
-from music_genre import create_playlists_by_class, load_class_genres
-from analyze_auto_playlists import analyze_auto_playlists
-from find_auto_playlists import find_all_playlists
-from list_playlists import list_all_playlists
-from check_auto_created import check_auto_playlists
-from delete_playlist import delete_playlists
-from update_playlists import update_playlists_main
+
+# Permettre l'import du package spotifyapp (depuis la racine du projet)
+_PROJECT_ROOT = Path(__file__).resolve().parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+if str(_PROJECT_ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT / "src"))
+
+from spotifyapp.credentials import sp
+from spotifyapp.music_genre import create_playlists_by_class, load_class_genres
+from spotifyapp.analyze_auto_playlists import analyze_auto_playlists
+from spotifyapp.find_auto_playlists import find_all_playlists
+from spotifyapp.list_playlists import list_all_playlists
+from spotifyapp.check_auto_created import check_auto_playlists
+from spotifyapp.delete_playlist import delete_playlists
+from spotifyapp.update_playlists import update_playlists_main
 
 
 def get_liked_tracks():
@@ -41,7 +50,7 @@ def analyze_genres(liked_tracks, use_cache=True, force_refresh=False):
     print("\n[*] Analyse des genres des artistes...")
     
     if use_cache:
-        from genre_cache import get_cache
+        from spotifyapp.genre_cache import get_cache
         cache = get_cache()
         
         # Afficher les stats du cache
@@ -168,7 +177,7 @@ def main():
     
     if "--cache-stats" in sys.argv:
         print("\n[*] Statistiques du cache\n")
-        from genre_cache import get_cache
+        from spotifyapp.genre_cache import get_cache
         cache = get_cache()
         stats = cache.get_cache_stats()
         print(f"Fichier de cache: {stats['cache_file']}")
@@ -184,7 +193,7 @@ def main():
     
     if "--clear-cache" in sys.argv:
         print("\n[*] Vidage du cache\n")
-        from genre_cache import get_cache
+        from spotifyapp.genre_cache import get_cache
         cache = get_cache()
         cache.clear_cache(confirm=True)
         return

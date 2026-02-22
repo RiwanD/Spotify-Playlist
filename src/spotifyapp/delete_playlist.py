@@ -5,18 +5,8 @@ from datetime import datetime, timezone
 from typing import List, Dict
 
 try:
-    # Utilise ton module d'authentification existant
-    from credentials import sp
+    from .credentials import sp
 except ImportError:
-    # Alternative directe si besoin :
-    # import spotipy
-    # from spotipy.oauth2 import SpotifyOAuth
-    # sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-    #     client_id=CLIENT_ID,
-    #     client_secret=CLIENT_SECRET,
-    #     redirect_uri="http://127.0.0.1:8888/callback",
-    #     scope="playlist-read-private playlist-modify-public playlist-modify-private"
-    # ))
     raise RuntimeError("Import de `credentials` impossible. Assure-toi que credentials.py est présent.")
 
 OCT_START = datetime(2025, 10, 1, tzinfo=timezone.utc)
