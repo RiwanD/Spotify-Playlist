@@ -10,6 +10,11 @@ from collections import defaultdict
 from .credentials import sp
 from .music_genre import load_class_genres, get_incompatible_genres, filter_incompatible_tracks
 from .paths import path_last_update
+from .playlist_cache import (
+    load_playlist_cache,
+    load_staged_playlists,
+    refresh_playlist_cache,
+)
 
 
 def load_last_update_date():
@@ -253,25 +258,25 @@ def find_playlists_for_genres(class_genres, genre_dict, track_genres_dict):
 
 def find_playlist_by_name(playlist_name):
     """
-    Trouve une playlist par son nom.
-    
+    Trouve une playlist par son nom (utilise le cache si disponible).
+
     Args:
         playlist_name: Nom de la playlist à chercher
-    
+
     Returns:
         ID de la playlist ou None
     """
+    cache = load_playlist_cache()
+    if playlist_name in cache and cache[playlist_name].get("id"):
+        return cache[playlist_name]["id"]
     playlists = []
     results = sp.current_user_playlists(limit=50)
-    
     while results:
         playlists.extend(results["items"])
         results = sp.next(results) if results.get("next") else None
-    
     for playlist in playlists:
         if playlist.get("name") == playlist_name:
             return playlist.get("id")
-    
     return None
 
 
@@ -385,10 +390,23 @@ def update_playlists_main(confirm=False, use_cache=True, force_refresh=False):
     
     # Charger les classes de genres
     class_genres = load_class_genres()
-    
+
+    # Rafraîchir le cache des playlists (auto) pour inclure toutes les playlists dont celle d'entraînement
+    refresh_playlist_cache(suffix="(auto)")
+    print("[*] Cache des playlists (auto) mis a jour.")
+
     # Trouver les playlists à mettre à jour
     playlists_to_update = find_playlists_for_genres(class_genres, genre_dict, track_genres_dict)
-    
+
+    # Mode "git" : si des playlists sont staged, ne mettre à jour que celles-là
+    staged = load_staged_playlists()
+    if staged:
+        staged_set = set(staged)
+        playlists_to_update = {
+            name: uris for name, uris in playlists_to_update.items() if name in staged_set
+        }
+        print(f"[*] Mise a jour partielle : {len(playlists_to_update)} playlist(s) staged sur {len(staged)} selectionnee(s).")
+
     # Mettre à jour les playlists
     update_playlists(playlists_to_update, confirm=confirm)
     

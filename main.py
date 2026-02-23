@@ -18,6 +18,13 @@ from spotifyapp.list_playlists import list_all_playlists
 from spotifyapp.check_auto_created import check_auto_playlists
 from spotifyapp.delete_playlist import delete_playlists
 from spotifyapp.update_playlists import update_playlists_main
+from spotifyapp.playlist_cache import (
+    load_playlist_cache,
+    load_staged_playlists,
+    save_staged_playlists,
+    clear_staged_playlists,
+    refresh_playlist_cache,
+)
 
 
 def get_liked_tracks():
@@ -95,6 +102,19 @@ def analyze_genres(liked_tracks, use_cache=True, force_refresh=False):
     return genre_dict, track_genres_dict
 
 
+def get_args_after(flag):
+    """Retourne la liste des arguments après un drapeau jusqu'au prochain -- ou fin."""
+    argv = sys.argv
+    if flag not in argv:
+        return []
+    i = argv.index(flag) + 1
+    out = []
+    while i < len(argv) and not argv[i].startswith("--"):
+        out.append(argv[i])
+        i += 1
+    return out
+
+
 def show_help():
     """Affiche l'aide avec toutes les options disponibles."""
     print("=" * 80)
@@ -108,6 +128,10 @@ def show_help():
     print("  --check             : Vérifier les playlists créées automatiquement")
     print("  --delete            : Supprimer des playlists (utilisez --auto pour cibler les '(auto)')")
     print("  --update            : Mettre à jour les playlists avec les nouveaux titres likés")
+    print("  --update --only A B  : Mettre à jour uniquement les playlists A, B (mode git)")
+    print("  --stage A B         : Sélectionner les playlists à mettre à jour (prochain --update)")
+    print("  --stage-list        : Afficher les playlists sélectionnées (staged)")
+    print("  --stage-clear       : Vider la sélection (prochain --update met à jour toutes)")
     print("  --train-model       : Entraîner le modèle de scoring des genres (--bucket X ou --all-buckets)")
     print("  --confirm           : Confirmer les actions (création/suppression)")
     print("  --scoring           : Utiliser le système de scoring pondéré (nécessite entraînement)")
@@ -128,6 +152,9 @@ def show_help():
     print("  python main.py --update --confirm  # Mettre à jour réellement les playlists")
     print("  python main.py --train-model --bucket 4.3        # Entraîner un bucket")
     print("  python main.py --train-model --all-buckets       # Entraîner tous les buckets")
+    print("  python main.py --stage \"[4] Rock (auto)\"        # Sélectionner une playlist pour --update")
+    print("  python main.py --stage-list                      # Voir les playlists sélectionnées")
+    print("  python main.py --update --only \"[4] Rock (auto)\"  # Mettre à jour uniquement cette playlist")
     print("=" * 80)
 
 
@@ -158,6 +185,8 @@ def main():
     if "--list" in sys.argv:
         print("\n[*] Mode : Liste de toutes les playlists\n")
         list_all_playlists()
+        refresh_playlist_cache(suffix="(auto)")
+        print("[*] Cache des playlists (auto) mis a jour.")
         return
     
     if "--check" in sys.argv:
@@ -171,8 +200,42 @@ def main():
         delete_playlists(confirm=confirm, auto_mode=auto_mode)
         return
     
+    if "--stage-list" in sys.argv:
+        print("\n[*] Playlists sélectionnées (staged)\n")
+        staged = load_staged_playlists()
+        if not staged:
+            print("  (aucune playlist sélectionnée)")
+            print("  Utilisez --stage \"Nom playlist\" pour en ajouter, ou --update sans --only pour tout mettre à jour.")
+        else:
+            for name in staged:
+                print(f"  - {name}")
+        cache = load_playlist_cache()
+        if cache:
+            print(f"\n[*] Cache : {len(cache)} playlist(s) (auto) connue(s)")
+        return
+
+    if "--stage-clear" in sys.argv:
+        clear_staged_playlists()
+        print("\n[*] Sélection (staged) vidée. Le prochain --update mettra à jour toutes les playlists concernées.")
+        return
+
+    if "--stage" in sys.argv:
+        names = get_args_after("--stage")
+        if not names:
+            print("\n[!] Indiquez au moins un nom de playlist après --stage (ex. python main.py --stage \"[4] Rock (auto)\")")
+            return
+        save_staged_playlists(names)
+        print(f"\n[*] {len(names)} playlist(s) sélectionnée(s) pour le prochain --update :")
+        for n in names:
+            print(f"  - {n}")
+        return
+
     if "--update" in sys.argv:
         print("\n[*] Mode : Mise à jour des playlists\n")
+        only_names = get_args_after("--only")
+        if only_names:
+            save_staged_playlists(only_names)
+            print(f"[*] Mise à jour partielle : {len(only_names)} playlist(s) sélectionnée(s).")
         use_cache = ("--no-cache" not in sys.argv)
         force_refresh = ("--refresh-cache" in sys.argv)
         update_playlists_main(confirm=confirm, use_cache=use_cache, force_refresh=force_refresh)
