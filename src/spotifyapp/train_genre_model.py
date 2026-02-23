@@ -92,7 +92,7 @@ def analyze_tracks_genres(track_uris: set, use_cache=True, force_refresh=False) 
     print("\n[*] Analyse des genres des titres...")
     
     if use_cache:
-        from .genre_cache import get_cache
+        from spotifyapp.genre_cache import get_cache
         cache = get_cache()
         
         # Afficher les stats du cache

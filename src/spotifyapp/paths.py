@@ -25,6 +25,16 @@ def path_last_update() -> Path:
     return DIR_DATA / "last_update.json"
 
 
+def path_playlist_cache() -> Path:
+    """Chemin du fichier de cache des playlists (auto)."""
+    return DIR_DATA / "playlist_cache.json"
+
+
+def path_staged_playlists() -> Path:
+    """Chemin du fichier des playlists sélectionnées pour mise à jour (mode git)."""
+    return DIR_DATA / "staged_playlists.json"
+
+
 def path_genre_cache() -> Path:
     """Chemin du fichier de cache des genres."""
     return DIR_DATA / "genre_cache.json"

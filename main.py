@@ -108,6 +108,7 @@ def show_help():
     print("  --check             : Vérifier les playlists créées automatiquement")
     print("  --delete            : Supprimer des playlists (utilisez --auto pour cibler les '(auto)')")
     print("  --update            : Mettre à jour les playlists avec les nouveaux titres likés")
+    print("  --train-model       : Entraîner le modèle de scoring des genres (--bucket X ou --all-buckets)")
     print("  --confirm           : Confirmer les actions (création/suppression)")
     print("  --scoring           : Utiliser le système de scoring pondéré (nécessite entraînement)")
     print("  --no-cache          : Désactiver l'utilisation du cache des genres")
@@ -125,6 +126,8 @@ def show_help():
     print("  python main.py --delete --auto --confirm  # Supprimer réellement les playlists '(auto)'")
     print("  python main.py --update            # Dry-run : mettre à jour les playlists")
     print("  python main.py --update --confirm  # Mettre à jour réellement les playlists")
+    print("  python main.py --train-model --bucket 4.3        # Entraîner un bucket")
+    print("  python main.py --train-model --all-buckets       # Entraîner tous les buckets")
     print("=" * 80)
 
 
@@ -173,6 +176,14 @@ def main():
         use_cache = ("--no-cache" not in sys.argv)
         force_refresh = ("--refresh-cache" in sys.argv)
         update_playlists_main(confirm=confirm, use_cache=use_cache, force_refresh=force_refresh)
+        return
+    
+    if "--train-model" in sys.argv:
+        print("\n[*] Mode : Entraînement du modèle de scoring des genres\n")
+        argv = [a for a in sys.argv if a != "--train-model"]
+        sys.argv[:] = argv
+        from spotifyapp.train_genre_model import main as train_genre_model_main
+        train_genre_model_main()
         return
     
     if "--cache-stats" in sys.argv:
